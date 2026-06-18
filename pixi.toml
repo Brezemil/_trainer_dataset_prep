@@ -1,0 +1,40 @@
+[workspace]
+name = "geospatial-yolo-pipeline"
+version = "0.1.0"
+description = "A pipeline for slicing, raycasting, stratifying, and mapping YOLO datasets."
+authors = ["Your Name <your.email@example.com>"]
+channels = ["conda-forge"]
+platforms = ["win-64", "linux-64"]
+
+[dependencies]
+# Core Python
+python = "3.10.*"
+
+# Data & Math
+numpy = "<2.0.0" 
+tqdm = "*"
+
+# Image Processing
+pillow = "*"
+
+# Geospatial & Cartography
+geopandas = "*"
+shapely = "*"
+pyproj = "*"
+contextily = "*"
+matplotlib = "*"
+matplotlib-scalebar = "*"
+jupyter = ">=1.1.1,<2"
+seaborn = ">=0.13.2,<0.14"
+
+[pypi-dependencies]
+# Machine Learning & 3D
+open3d = "*"
+fiftyone = "*"
+opencv-python = "*" # Moved to PyPI to prevent DLL collision with FiftyOne
+
+[tasks]
+slice = "python 1_slicer.py"
+raycast = "python 2_raycaster.py"
+stratify = "python 3_stratification.py"
+visualize = "python 4_fiftyone.py"

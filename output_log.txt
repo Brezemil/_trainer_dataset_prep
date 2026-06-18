@@ -1,0 +1,102 @@
+===Raycasting===
+Jupyter environment detected. Enabling Open3D WebVisualizer.
+[Open3D INFO] WebRTC GUI backend enabled.
+[Open3D INFO] WebRTCWindowSystem: HTTP handshake server disabled.
+
+--- Processing Campaign: 2023 ---
+Parsing Metashape XML: cameras.xml...
+Loading Mesh for 2023 and setting up Raycaster...
+[Open3D WARNING] Legacy mesh has more than 1 material which is not supported by Tensor-based mesh. Only material DefaultMaterial was converted.
+[2023] mapped 3922 slices.
+
+--- Processing Campaign: 2024 ---
+Parsing Metashape XML: cameras_33n.xml...
+Loading Mesh for 2024 and setting up Raycaster...
+[Open3D WARNING] Legacy mesh has more than 1 material which is not supported by Tensor-based mesh. Only material DefaultMaterial was converted.
+[2024] mapped 3375 slices.
+
+Finished processing all campaigns. 7297/7450 total slices mapped.
+GeoJSON successfully saved to: C:\Users\emilb\_data\dataset_fin\sliced_dataset_edge_coordinates\image_footprints.geojson
+CSV Edge coordinates successfully saved to: C:\Users\emilb\_data\dataset_fin\sliced_dataset_edge_coordinates\image_edge_coordinates.csv
+============================================================
+ Process Complete
+============================================================
+
+
+
+===Stratification===
+============================================================
+ Executing Spatial Spatio-Temporal Splitter
+============================================================
+[INFO] Loading spatial footprints from: image_footprints.geojson
+[DIAGNOSTIC] Loaded 7297 image footprints.
+[INFO] Cleaning invalid geometries (fixing bowties)...
+[INFO] Checking for oversized polygons (Threshold: +600.0%)...
+[WARNING] Dropped 3 footprint(s) exceeding 600.0% of average area.
+           -> Average Area: 404.96 m^2 | Max Allowed: 2834.74 m^2
+[INFO] Forcing orientation: South -> North.
+[INFO] Allocated 510 images to TEST (South).
+[INFO] Allocated 510 images to VAL (North).
+[INFO] Computing intersections (Max allowed overlap: 0%)...
+[INFO] Logged boundary-dropped images to C:\Users\emilb\_data\dataset_fin\sliced_split_dataset\dropped_images.txt
+
+------------------------------
+[STATS] SPATIAL SPLIT SUMMARY
+------------------------------
+ Total Footprints Analyzed : 7297
+ Dropped (Oversized)       : 3 (0.04%)
+ Dropped (Boundary Buffer) : 749 (10.26%)
+ Retained (Safe Set)       : 6545
+   -> Train Allocation     : 5525
+   -> Val Allocation       : 510
+   -> Test Allocation      : 510
+...
+
+============================================================
+ Process Complete
+============================================================
+
+
+
+===Fiftyone Ingestion & Drawing ===
+==================================================
+ Starting FiftyOne Dataset Ingestion
+==================================================
+ 100% |███████████████| 5525/5525 [23.4s elapsed, 0s remaining, 150.3 samples/s]      
+ 100% |█████████████████| 510/510 [3.7s elapsed, 0s remaining, 136.9 samples/s]      
+ 100% |█████████████████| 510/510 [3.3s elapsed, 0s remaining, 153.4 samples/s]      
+
+[Progress] Assigning Coordinates to metadata and calculating stats...
+ 100% |███████████████| 6545/6545 [12.0s elapsed, 0s remaining, 582.1 samples/s]      
+
+--- Split Breakdown by Campaign ---
+    [TRAIN]
+        -> 2023: 3143 slices
+        -> 2024: 2382 slices
+    [VAL]
+        -> 2023: 244 slices
+        -> 2024: 266 slices
+    [TEST]
+        -> 2023: 198 slices
+        -> 2024: 312 slices
+==================================================
+
+
+==================================================
+ Executing Cartographic Mapping Engine
+==================================================
+[DIAGNOSTIC] Total geospatial coordinates extracted: 6545
+[DIAGNOSTIC] Distribution by Map Group:
+  -> TRAIN: 5525 points
+  -> VAL: 510 points
+  -> TEST: 510 points
+[DIAGNOSTIC] Temporal spans identified - Newest: 2024, Older layer: 2023
+[INFO] Requesting basemap from Mapbox/Esri servers...
+[INFO] Basemap rendered successfully.
+[INFO] Writing map image to disk...
+[SUCCESS] Publication-ready map saved to: C:\Users\emilb\_data\dataset_fin\sliced_split_dataset\geostrat_dataset_map.png
+==================================================
+
+[Progress] Starting FiftyOne server...
+Session launched. Run `session.show()` to open the App in a cell output.
+Notebook sessions cannot wait
