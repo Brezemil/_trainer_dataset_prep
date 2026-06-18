@@ -87,37 +87,34 @@ pixi install
 ---
 
 ## 🚀 Execution Tasks
-
-The project configuration defines four sequential CLI tasks inside [pixi.toml](file:///C:/Users/emilb/_trainer_dataset_prep/pixi.toml). 
-
-Currently, the implementation resides in the notebook [_rework_slice_stratify_import.ipynb](file:///C:/Users/emilb/_trainer_dataset_prep/_rework_slice_stratify_import.ipynb). You can run them via the CLI as soon as they are compiled to standalone scripts:
+The project configuration defines four sequential CLI tasks inside [pixi.toml](file:///C:/Users/emilb/_trainer_dataset_prep/pixi.toml) which map directly to executable Python scripts:
 
 ```bash
 # Step 1: Slice the orthophoto dataset into patches
-pixi run slice
+pixi run slice          # Runs 1_slicer.py
 
 # Step 2: Raycast local coordinates onto the 3D meshes to get GeoJSON footprints
-pixi run raycast
+pixi run raycast        # Runs 2_raycaster.py
 
 # Step 3: Stratify the sliced images into geographically separated Train/Val/Test subsets
-pixi run stratify
+pixi run stratify       # Runs 3_stratification.py
 
 # Step 4: Ingest the final dataset into FiftyOne and draw static cartographic maps
-pixi run visualize
+pixi run visualize      # Runs 4_fiftyone.py
 ```
 
 ---
 
 ## 📖 Pipeline Breakdown
 
-The code is divided into four main logical modules inside [_rework_slice_stratify_import.ipynb](file:///C:/Users/emilb/_trainer_dataset_prep/_rework_slice_stratify_import.ipynb):
+The pipeline code is modularized into four standalone scripts:
 
-### 1. Dataset Slicing (Metadata Export)
+### 1. Dataset Slicing (Metadata Export) - [1_slicer.py](file:///C:/Users/emilb/_trainer_dataset_prep/1_slicer.py)
 * **Function**: `prepare_sliced_dataset_shiftback(...)`
 * **Purpose**: Divides large, high-resolution source orthophotos and associated YOLO annotations into standard tile sizes (e.g., `1024x1024` pixels).
 * **Key Innovation**: Tracks the exact pixel bounding box of every generated tile relative to the parent sensor and exports a `slice_metadata.json` mapping database. This preserves local spatial references so the raycaster knows exactly where each crop originated on the parent sensor.
 
-### 2. 3D Raycasting (Georeferencing)
+### 2. 3D Raycasting (Georeferencing) - [2_raycaster.py](file:///C:/Users/emilb/_trainer_dataset_prep/2_raycaster.py)
 * **Function**: `run_multi_campaign_pipeline(...)`
 * **Purpose**: Projects the local 2D pixel coordinates of each image slice corner back through the camera sensor model into 3D UTM coordinate space.
 * **Mechanism**:
@@ -129,9 +126,11 @@ The code is divided into four main logical modules inside [_rework_slice_stratif
   - `image_footprints.geojson`: Detailed spatial polygons for all georeferenced slices.
   - `image_edge_coordinates.csv`: Tabular coordinate limits.
 
-### 3. Spatial Stratification
+### 3. Spatial Stratification - [3_stratification.py](file:///C:/Users/emilb/_trainer_dataset_prep/3_stratification.py)
 * **Function**: `generate_spatial_splits(...)` and `build_dataset_structure(...)`
 * **Purpose**: Implements a spatial train-test split that avoids spatial autocorrelation (data leakage). Simply splitting slices randomly causes neighboring (overlapping) slices to fall into both Train and Test, yielding overly optimistic evaluation metrics.
+* **Geospatial Precision Update**: 
+  Calculations for polygon areas and centroid checking are projected to **EPSG:32633 (UTM Zone 33N)** instead of Web Mercator (EPSG:3857) to ensure metric accuracy and prevent area scale distortion inflation.
 * **Mechanism**:
   - Automatically cleans bowtie or invalid geometries in the raycasted GeoJSON footprints.
   - Drops oversized polygons (e.g., raycaster misses or boundary noise exceeding `600%` of the average area).
@@ -142,14 +141,17 @@ The code is divided into four main logical modules inside [_rework_slice_stratif
   - `data.yaml`: YOLOv8-compatible dataset configuration.
   - `dropped_images.txt`: Diagnostics of slices discarded due to size or boundary-clash.
 
-### 4. FiftyOne Ingestion & Visualization
+### 4. FiftyOne Ingestion & Visualization - [4_fiftyone.py](file:///C:/Users/emilb/_trainer_dataset_prep/4_fiftyone.py)
 * **Function**: `load_and_visualize_dataset(...)`
-* **Purpose**: Slicing images strips metadata (like EXIF coordinates) because OpenCV doesn't carry over tags. This module integrates the georeferenced database back into Voxel51 FiftyOne.
+* **Purpose**: Ingests dataset splits into FiftyOne for spatial visualization and renders publication-ready spatial cohort maps.
+* **Dynamic Path Correction**:
+  Resolves the hardcoded paths bug by dynamically finding the `source_images_dir` (`folder_path.parent / "sliced_dataset" / "images"`) to correctly include the campaign folders and enable "ghost" boundary buffer injection.
 * **Key Features**:
   - Parses the `image_footprints.geojson` file to calculate the footprint centroids.
   - Ingests samples and attaches spatial GPS labels (`fo.GeoLocation`) to each dataset record.
-  - Spawns the FiftyOne App showing the visual grids alongside an interactive map panel.
-  - Calls a cartographic engine (`contextily` + `matplotlib` + `matplotlib-scalebar`) to render a publication-ready overview map (`geostrat_dataset_map.png`) showing spatial training groupings.
+  - Spawns the FiftyOne server and prints the connection URL prominently to standard output without launching the browser tab automatically (preventing popups).
+  - Calls a cartographic engine (`contextily` + `matplotlib` + `matplotlib-scalebar`) to render an overview map (`geostrat_dataset_map.png`) showing spatial training groups, with the map legend positioned cleanly outside the plot boundaries to avoid overlap.
+
 
 ---
 
