@@ -26,6 +26,7 @@ matplotlib = "*"
 matplotlib-scalebar = "*"
 jupyter = ">=1.1.1,<2"
 seaborn = ">=0.13.2,<0.14"
+python-dotenv = ">=1.2.3,<2"
 
 [pypi-dependencies]
 # Machine Learning & 3D
@@ -38,3 +39,6 @@ slice = "python 1_slicer.py"
 raycast = "python 2_raycaster.py"
 stratify = "python 3_stratification.py"
 visualize = "python 4_fiftyone.py"
+build-testset = "python 5_build_testset_combined.py"
+plot-testset = "python plot_testset_centroids.py"
+plot-all = "python render_dataset_maps.py"

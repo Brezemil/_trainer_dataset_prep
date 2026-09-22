@@ -1,0 +1,66 @@
+# ==============================================================================
+# Geospatial YOLO Pipeline Configuration Template
+# Copy this file to 'config.yaml' and customize with your local paths:
+#   cp config.example.yaml config.yaml
+# ==============================================================================
+
+# --- Base Root Directories ---
+base_export_dir: "path/to/export_data"
+raw_images_dir: "path/to/raw_drone_images"
+plots_dir: "plots"
+
+# --- Step 1: Dataset Slicing (1_slicer.py) ---
+slicing:
+  input_dir: "path/to/export_data/sliced_dataset"
+  output_dir: "path/to/export_data/sliced_dataset"
+  slice_size: 1024
+  overlap_ratio: 0.2
+  min_area_ratio: 0.2
+  classes:
+    - "A. altissima"
+  background_probabilities:
+    train: 0.10
+    val: 1.0
+    test: 1.0
+
+# --- Step 2: 3D Surface Raycasting (2_raycaster.py) ---
+raycasting:
+  metadata_path: "path/to/export_data/sliced_dataset/slice_metadata.json"
+  export_dir: "path/to/export_data/sliced_dataset_edge_coordinates"
+  utm_epsg: 32633
+  campaigns:
+    "2023":
+      xml_path: "path/to/export_data/ortho_sat/total_area_23/cameras.xml"
+      mesh_path: "path/to/export_data/ortho_sat/total_area_23/totareaAug23_decim.obj"
+    "2024":
+      xml_path: "path/to/export_data/ortho_sat/total_area_24/cameras_33n.xml"
+      mesh_path: "path/to/export_data/ortho_sat/total_area_24/totarea_decim.obj"
+
+# --- Step 3: Spatial Stratification (3_stratification.py) ---
+stratification:
+  dataset_dir: "path/to/export_data/sliced_dataset"
+  output_dir: "path/to/export_data/sliced_split_dataset"
+  geojson_path: "path/to/export_data/sliced_dataset_edge_coordinates/image_footprints.geojson"
+  split_ratio: [0.86, 0.07, 0.07]  # [Train, Val, Test]
+  max_overlap_pct: 0.0
+  max_oversized_pct: 600.0
+  classes:
+    - "A. altissima"
+  utm_epsg: 32633
+
+# --- Step 4: FiftyOne & Mapping (4_fiftyone.py) ---
+fiftyone:
+  folder_path: "path/to/export_data/sliced_split_dataset"
+  geojson_path: "path/to/export_data/sliced_dataset_edge_coordinates/image_footprints.geojson"
+  dataset_name: "yolo_dataset"
+  show_grid: false
+  show_orphans: true
+
+# --- Step 5: Testset Builder (5_build_testset_combined.py) ---
+testset_builder:
+  export_dir: "path/to/export_data"
+  raw_images_dir: "path/to/raw_drone_images"
+  output_dir: "path/to/export_data/testset_unlabeled_combined"
+  plots_dir: "plots"
+  utm_epsg: 32633
+  max_workers: 8
