@@ -55,9 +55,23 @@ flowchart TD
     end
 ```
 
----
+### Unified Input Architecture (`_data/`) & Fast Machine Transfer
+All dataset inputs, raw photos, slicing metadata, photogrammetry models, image footprints, and dataset splits across the four thesis repositories (`_trainer_dataset_prep`, `_trainer_DINOV3-YOLOV12`, `_trainer_lightly`, and `_trainer_pred_plotter`) are centralized in the sibling `_data/` directory (`../_data`).
 
-## 2. Directory Layout & Key Files
+#### A. Central Path Configuration (`config.yaml` & `config.py`)
+- `base_export_dir` in `config.yaml` defaults to `../_data`.
+- `config.py` automatically resolves `BASE_EXPORT_DIR`, `RAW_IMAGES_DIR`, `RAYCASTER_METADATA_PATH`, `STRAT_OUTPUT_DIR`, and `TESTSET_OUTPUT_DIR` to `../_data` with dynamic fallback to `DATA_DIR` or local directories.
+- Export targets map directly into `_data`:
+  - Slicing & footprints metadata: `_data/metadata/`
+  - Sliced dataset splits: `_data/sliced_split_dataset/`
+  - Extended test dataset: `_data/testset_unlabeled_combined/`
+  - Photogrammetry meshes and XMLs: `_data/photogrammetry/`
+
+#### B. Fast Machine Transfer Guide
+To transfer the entire thesis workspace to a new PC or storage drive:
+1. Copy or clone the four repositories (`_trainer_dataset_prep`, `_trainer_DINOV3-YOLOV12`, `_trainer_lightly`, `_trainer_pred_plotter`) as sibling folders.
+2. Copy the `_data/` folder into the same parent folder alongside the four repositories.
+3. No path adjustments or external drive paths (`E:\Götterbaum`) are required. All scripts locate inputs relatively.
 
 | File / Directory | Description |
 | :--- | :--- |
@@ -71,7 +85,10 @@ flowchart TD
 | [`4_fiftyone.py`](file:///C:/Users/emilb/Documents/GitHub/_trainer_dataset_prep/4_fiftyone.py) | Imports dataset splits, bounding boxes, and geolocation into Voxel51 FiftyOne, visualizes ghost buffer tiles, and exports publication maps. |
 | [`5_build_testset_combined.py`](file:///C:/Users/emilb/Documents/GitHub/_trainer_dataset_prep/5_build_testset_combined.py) | Builds pure, zero-leakage combined evaluation set (positive labels + realistic negative background tiles from the test zone) with cartographic figures. |
 | [`plot_testset_centroids.py`](file:///C:/Users/emilb/Documents/GitHub/_trainer_dataset_prep/plot_testset_centroids.py) | Generates high-resolution multi-temporal centroid maps for the extended testset, segregating 2023 vs 2024 UAV campaigns. |
+| [`plot_bbox_analysis.py`](file:///C:/Users/emilb/Documents/GitHub/_trainer_dataset_prep/plot_bbox_analysis.py) | Analyzes YOLO bounding box dimensions, aspect ratios, log-scale area distribution, and within-tile spatial heatmaps. |
 | [`render_dataset_maps.py`](file:///C:/Users/emilb/Documents/GitHub/_trainer_dataset_prep/render_dataset_maps.py) | Master publication cartography suite generating whole dataset split maps, distillation maps, survey flight maps, and selected labelling maps. |
+| [`thesis_plotting_suite.ipynb`](file:///C:/Users/emilb/Documents/GitHub/_trainer_dataset_prep/thesis_plotting_suite.ipynb) | Master interactive Jupyter Notebook consolidating all analytical, cartographic, and bbox plotting routines. |
+| [`DATASET_ANALYSIS_RESULTS.md`](file:///C:/Users/emilb/Documents/GitHub/_trainer_dataset_prep/DATASET_ANALYSIS_RESULTS.md) | Empirical results document detailing split statistics, bounding box distributions, and cartographic parameters. |
 | [`README.md`](file:///C:/Users/emilb/Documents/GitHub/_trainer_dataset_prep/README.md) | User-facing documentation and quickstart instructions. |
 
 ---
@@ -98,6 +115,10 @@ pixi run visualize
 pixi run build-testset
 pixi run plot-testset
 pixi run plot-all
+pixi run plot-bboxes
+
+# Launch JupyterLab environment
+pixi run lab
 
 # Run any arbitrary python command in the managed environment
 pixi run python <script_name>.py [flags]
@@ -161,19 +182,19 @@ Standard C++ bindings in OpenCV (`cv2.imread` / `cv2.imwrite`) fail silently on 
 - **Minimalist Publication Standards**:
   - Clean cartographic maps with true metric coordinate systems (UTM Zone 33N Easting & Northing [m]) and a high-precision scale bar (Maßstab).
   - Never include speech bubbles, text banners, callout boxes, or statistics card overlays across the map canvas.
-  - **All font sizes must be at least 16 pt for primary map elements** (axis labels 18 pt, ticks 16 pt, legends 16 pt, scalebar 16 pt).
-  - **Minimalist Two-Tone North Arrow**: Classic publication compass rose needle (dark navy left half, white right half with crisp borders) with bold 'N' above featuring a subtle white outline. Positioned near the top (`y_tip=0.890`) safely inside the satellite imagery canvas, supporting both top-left (default) and top-right placement.
-  - **Satellite Tile Attribution**: Discrete attribution positioned at bottom-left (`x=0.015, y=0.015, ha='left', va='bottom'`) at ~11 pt: `"Satellite Imagery: © Esri, Maxar, Earthstar Geographics"`.
+  - **All font sizes standardized for publication**: primary map elements are 18 pt (axis labels 18 pt, ticks 18 pt, legends 18 pt, scalebar 18 pt, North arrow 18 pt).
+  - **Minimalist Two-Tone North Arrow**: Classic publication compass rose needle (dark navy left half, white right half with crisp borders) with bold 'N' above featuring a subtle white outline. Positioned near the top (`y_tip=0.885`) safely inside the satellite imagery canvas, supporting both top-left (default) and top-right placement.
+  - **Satellite Tile Attribution**: Discrete attribution positioned at bottom-left (`x=0.015, y=0.015, ha='left', va='bottom'`) kept visibly smaller at 10 pt: `"Satellite Imagery: © Esri, Maxar, Earthstar Geographics"`.
   - **Dedicated Bottom Spatial Buffer**: All maps apply an asymmetric bottom margin (`pad_y_bottom > pad_y_top`) on the Northing axis to ensure bottom-left attribution and bottom-right scale bar do not cover or overlap data points.
-  - **Synchronized Global Wide Extent**: All five wide-area maps (`whole_dataset_images_2023_map.png`, `whole_dataset_images_2024_map.png`, `whole_dataset_images_by_year.png`, `selected_images_for_labelling_map.png`, `distillation_dataset_map.png`) share the exact same bounding box, metric tick intervals (250m / 200m), scale bar (200m), and aspect ratio.
-  - **Clean Top Legends**: Legends are placed horizontally above the map (`bbox_to_anchor=(0.5, 1.02)` or `(0.0, 1.02)`), maximizing available map canvas width and area on publication pages (e.g., top half of portrait A4 Word documents) without lateral compression.
+  - **Synchronized Global Wide Extent**: The wide-area survey and distillation maps (`whole_dataset_images_2023_map.png`, `whole_dataset_images_2024_map.png`, `whole_dataset_images_by_year.png`, `distillation_dataset_map.png`) share the exact same bounding box, metric tick intervals (250m / 500m), scale bar (200m), and aspect ratio.
+  - **Clean Legends**: Legends are placed horizontally above the map (`bbox_to_anchor=(0.5, 1.02)` or `(0.0, 1.02)`), stacked in two or three rows, maximizing available map canvas width and area on publication pages without lateral compression.
   - **Thin White Border Invariant**: Scatter points feature a crisp thin white border (`edgecolors='white', linewidths=0.7`), **except** dense point clouds (distillation training set `s=2.5`, combined flight passes `s=11`) and dropped buffer moat points which remain borderless (`edgecolors='none'`).
 - **Dataset Map Cohorts ([`render_dataset_maps.py`](file:///C:/Users/emilb/Documents/GitHub/_trainer_dataset_prep/render_dataset_maps.py))**:
-  1. **Whole Dataset Splits**: Train = Vibrant Red (`#ff2222`), Val = Vibrant Bright Green (`#00e676`), Test = Blue (`#2563eb`), Dropped Buffer Moat = Gray opaque ghost points (`#64748b` without white border and without crosses). 2023 survey shown as solid circles; 2024 survey marked with a thin cross (`linewidths=0.5`) inside the circle.
+  1. **Whole Dataset Splits**: Train = Vibrant Red (`#ff2222`), Val = Vibrant Bright Green (`#00e676`), Test = Blue (`#2563eb`), Dropped Buffer Moat = Gray opaque ghost points (`#64748b` without white border and without crosses). 2023 survey shown as solid circles; 2024 survey marked with a thin cross (`linewidths=0.5`) inside the circle. Clean 2-row legend at top (`ncol=3`), 1:1 side ratio of the map part vertically extended for reduced point density and superior point distinction, and space-efficient vertical 90° Y-axis coordinate numbers with clean 100 m ticks (excluding overstanding bottom tags).
   2. **Distillation Pretraining Set**: Shows the complete Stage 1 distillation dataset containing all 119,137 slices (113,564 unlabeled background slices + 5,573 labeled train slices) spanning the western/southern parcel and central area, plotted with small red points (`s=2.5`), together with Validation (bright green) and Test (blue) splits (without the buffer zone). No distinction between 2023 and 2024 flight campaigns (no crosses, clean 3-entry legend).
   3. **Extended Test Set**: Single publication map (`extended_testset_centroids_map.png`) displaying the Original Labeled Test Slices ($n=257$, Deep Royal Blue `#1d4ed8`, diamond marker) vs Extended Unlabeled Background Slices ($n=4,464$, Sky Blue `#38bdf8`, circle marker) with thin white borders. No campaign breakdown or multi-panel subplots.
   4. **Whole Dataset Survey Locations**: Raw camera flight paths plotted using consistent colors (2023 = Deep Sky Blue `#0284c7`, 2024 = Vibrant Coral/Orange `#ea580c`) and circular points without crosses across all 3 variations. 2023, 2024, and combined maps share the exact same spatial extent; combined map uses smaller borderless points (`s=11`).
-  5. **Selected Images for Labelling**: Combined map showing the 783 parent photos selected for annotation (326 in 2023 `#0284c7` vs 457 in 2024 `#ea580c`) with thin white borders, strictly matching the view extent of the survey maps.
+  5. **Selected Images for Labelling**: Combined map showing the 783 parent photos selected for annotation (326 in 2023 `#0284c7` vs 457 in 2024 `#ea580c`) with thin white borders, zoomed in to fill the same 18:9.5 publication map format with wider satellite imagery margins on the right and left, and clean 200 m metric ticks.
 
 ---
 

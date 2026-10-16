@@ -3,7 +3,7 @@ plot_testset_centroids.py - Minimalist Publication Centroid Mapping (Shades of B
 =====================================================================================
 
 Generates clean, publication-ready cartographic maps of the extended testset slice
-centroids in shades of blue with all font sizes >= 16 pt, metric UTM Zone 33N
+centroids in shades of blue with all primary font sizes >= 20 pt, metric UTM Zone 33N
 coordinates, and precise Maßstab (scale bar).
 """
 
@@ -28,7 +28,7 @@ from render_dataset_maps import (
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Generate clean, minimalist publication-ready centroid maps in shades of blue (fonts >= 16 pt)."
+        description="Generate clean, minimalist publication-ready centroid maps in shades of blue (fonts >= 20 pt)."
     )
     parser.add_argument("--config", "-c", type=str, default="config.yaml", help="Path to YAML configuration file.")
     parser.add_argument("--export-dir", "-e", type=Path, default=config.TESTSET_EXPORT_DIR, help="Base export directory.")
@@ -40,7 +40,7 @@ def parse_args():
 def main():
     args = parse_args()
     print("=" * 65)
-    print(" EXTENDED TESTSET CENTROID MAP GENERATOR (SHADES OF BLUE, FONTS >= 16 PT)")
+    print(" EXTENDED TESTSET CENTROID MAP GENERATOR (SHADES OF BLUE, FONTS >= 20 PT)")
     print("=" * 65)
 
     accessible, geojson_path = verify_dataset_access(args.export_dir)

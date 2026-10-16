@@ -4,11 +4,11 @@ render_dataset_maps.py - Minimalist Cartographic Suite for Entire Dataset & Spli
 
 Generates minimalist, publication-ready cartographic maps across all dataset cohorts
 with consistent formatting:
-- All font sizes >= 16 pt (axis labels 18 pt, ticks 16 pt, legends 16 pt, scalebar 16 pt).
+- All font sizes enlarged: >= 20 pt for primary elements (axis labels 24 pt, ticks 20 pt, legends 20 pt, scalebar 20 pt, North arrow 22 pt).
 - High-precision metric coordinate system (EPSG:32633, UTM Zone 33N).
 - Metric Maßstab (ScaleBar).
 - Discrete North arrow.
-- Embedded satellite tile source attribution: "Satellite Imagery: (c) Esri, Maxar, Earthstar Geographics".
+- Embedded discrete satellite tile source attribution: "Satellite Imagery: (c) Esri, Maxar, Earthstar Geographics" (11 pt).
 - Zero speech bubbles, zero callouts, zero text blocks across the map canvas.
 
 Figures Produced:
@@ -57,13 +57,14 @@ except ImportError:
 
 
 # ------------------------------------------------------------------------------
-# Universal Cartographic Theme & Typography (Fonts >= 16 pt for primary elements)
+# Universal Cartographic Theme & Typography (Enlarged fonts = 18 pt, discrete attribution = 10 pt)
 # ------------------------------------------------------------------------------
 FONT_LABEL = 18
-FONT_TICK = 16
-FONT_LEGEND = 16
-FONT_SCALE = 16
-FONT_ATTR = 11
+FONT_TICK = 18
+FONT_LEGEND = 18
+FONT_SCALE = 18
+FONT_NORTH = 18
+FONT_ATTR = 10
 
 ATTR_TEXT = "Satellite Imagery: © Esri, Maxar, Earthstar Geographics"
 
@@ -128,14 +129,14 @@ def add_cartographic_accoutrements(
     scale_fraction: float = 0.15,
     north_pos: str = "top_left"
 ):
-    """Adds basemap, Maßstab (ScaleBar, 16 pt), North arrow, and discrete attribution."""
+    """Adds basemap, Maßstab (ScaleBar, 20 pt), North arrow (22 pt), and discrete attribution (11 pt)."""
     if use_basemap:
         try:
             ctx.add_basemap(ax, crs=crs_str, source=ctx.providers.Esri.WorldImagery, attribution="")
         except Exception as e:
             print(f"  [Notice] Basemap download skipped: {e}")
 
-    # ScaleBar (Maßstab) with 16 pt font in lower right
+    # ScaleBar (Maßstab) with 20 pt font in lower right
     scalebar = ScaleBar(
         1, "m",
         length_fraction=scale_fraction,
@@ -143,8 +144,8 @@ def add_cartographic_accoutrements(
         box_alpha=0.85,
         box_color="white",
         color="black",
-        pad=0.4,
-        border_pad=0.4,
+        pad=0.5,
+        border_pad=0.5,
         font_properties={"size": FONT_SCALE}
     )
     ax.add_artist(scalebar)
@@ -154,21 +155,21 @@ def add_cartographic_accoutrements(
         x = 0.962
     else:  # "top_left"
         x = 0.038
-    y_tip = 0.890
-    h_needle = 0.055
-    w = 0.009
-    p1 = patches.Polygon([[x, y_tip], [x - w, y_tip - h_needle], [x, y_tip - h_needle]], closed=True, facecolor="#0f172a", edgecolor="white", lw=0.9, transform=ax.transAxes, zorder=25)
-    p2 = patches.Polygon([[x, y_tip], [x + w, y_tip - h_needle], [x, y_tip - h_needle]], closed=True, facecolor="#ffffff", edgecolor="#0f172a", lw=0.9, transform=ax.transAxes, zorder=25)
-    p3 = patches.Polygon([[x, y_tip - h_needle * 1.3], [x - w, y_tip - h_needle], [x, y_tip - h_needle]], closed=True, facecolor="#ffffff", edgecolor="#0f172a", lw=0.9, transform=ax.transAxes, zorder=25)
-    p4 = patches.Polygon([[x, y_tip - h_needle * 1.3], [x + w, y_tip - h_needle], [x, y_tip - h_needle]], closed=True, facecolor="#0f172a", edgecolor="white", lw=0.9, transform=ax.transAxes, zorder=25)
+    y_tip = 0.885
+    h_needle = 0.062
+    w = 0.0105
+    p1 = patches.Polygon([[x, y_tip], [x - w, y_tip - h_needle], [x, y_tip - h_needle]], closed=True, facecolor="#0f172a", edgecolor="white", lw=1.0, transform=ax.transAxes, zorder=25)
+    p2 = patches.Polygon([[x, y_tip], [x + w, y_tip - h_needle], [x, y_tip - h_needle]], closed=True, facecolor="#ffffff", edgecolor="#0f172a", lw=1.0, transform=ax.transAxes, zorder=25)
+    p3 = patches.Polygon([[x, y_tip - h_needle * 1.3], [x - w, y_tip - h_needle], [x, y_tip - h_needle]], closed=True, facecolor="#ffffff", edgecolor="#0f172a", lw=1.0, transform=ax.transAxes, zorder=25)
+    p4 = patches.Polygon([[x, y_tip - h_needle * 1.3], [x + w, y_tip - h_needle], [x, y_tip - h_needle]], closed=True, facecolor="#0f172a", edgecolor="white", lw=1.0, transform=ax.transAxes, zorder=25)
     for p in [p1, p2, p3, p4]:
         ax.add_patch(p)
     ax.text(
-        x, y_tip + 0.008, "N",
+        x, y_tip + 0.010, "N",
         transform=ax.transAxes,
         ha="center", va="bottom",
-        fontsize=FONT_SCALE, fontweight="bold", color="#0f172a",
-        path_effects=[patheffects.withStroke(linewidth=3, foreground="white")],
+        fontsize=FONT_NORTH, fontweight="bold", color="#0f172a",
+        path_effects=[patheffects.withStroke(linewidth=3.5, foreground="white")],
         zorder=26
     )
 
@@ -185,18 +186,24 @@ def add_cartographic_accoutrements(
     )
 
 
-def format_metric_axes(ax, x_step: float = 100, y_step: float = 100):
-    """Formats axes with >= 16 pt font labels and ticks in UTM meters."""
+def format_metric_axes(ax, x_step: float = 100, y_step: float = 100, rotate_y: bool = True):
+    """Formats axes with unified font labels (20 pt) and metric coordinates in UTM meters."""
     ax.xaxis.set_major_locator(MultipleLocator(x_step))
     ax.yaxis.set_major_locator(MultipleLocator(y_step))
     ax.xaxis.set_minor_locator(MultipleLocator(x_step / 4))
     ax.yaxis.set_minor_locator(MultipleLocator(y_step / 4))
     ax.xaxis.set_major_formatter(StrMethodFormatter("{x:,.0f}"))
     ax.yaxis.set_major_formatter(StrMethodFormatter("{x:,.0f}"))
-    ax.set_xlabel("Easting [m, UTM Zone 33N]", fontsize=FONT_LABEL, labelpad=10)
-    ax.set_ylabel("Northing [m, UTM Zone 33N]", fontsize=FONT_LABEL, labelpad=10)
-    ax.tick_params(axis="both", which="major", labelsize=FONT_TICK, length=6, width=1.2, direction="out", color="#222222")
-    ax.tick_params(axis="both", which="minor", length=3, width=0.8, direction="out", color="#666666")
+    ax.set_xlabel("Easting [m, EPSG:32633]", fontsize=FONT_LABEL, labelpad=10)
+    ax.set_ylabel("Northing [m, EPSG:32633]", fontsize=FONT_LABEL, labelpad=14 if rotate_y else 10)
+    ax.tick_params(axis="x", which="major", labelsize=FONT_TICK, length=8, width=1.4, direction="out", color="#222222")
+    ax.tick_params(axis="x", which="minor", length=4, width=0.9, direction="out", color="#666666")
+    ax.tick_params(axis="y", which="major", labelsize=FONT_TICK, length=8, width=1.4, direction="out", color="#222222", pad=8 if rotate_y else 4)
+    ax.tick_params(axis="y", which="minor", length=4, width=0.9, direction="out", color="#666666")
+    if rotate_y:
+        plt.setp(ax.get_yticklabels(), rotation=90, ha="center", va="top")
+    else:
+        plt.setp(ax.get_yticklabels(), rotation=0, ha="right", va="center")
 
 
 def get_global_wide_extent(export_dir: Path) -> Tuple[Tuple[float, float], Tuple[float, float]]:
@@ -258,10 +265,10 @@ def render_whole_dataset_splits_map(
     dropped_lines = (split_dir / "dropped_images.txt").read_text().splitlines()
     dropped_stems = set(Path(l.strip()).stem for l in dropped_lines if l.strip())
 
-    fig, ax = plt.subplots(figsize=(15, 12), dpi=300, facecolor="white")
+    fig, ax = plt.subplots(figsize=(16, 16), dpi=300, facecolor="white")
 
     # Helper to plot group with 2023 circle and 2024 cross in circle
-    def plot_split(stems, color, label_prefix, z_base, alpha=0.9, s=28, is_ghost=False):
+    def plot_split(stems, color, label_prefix, z_base, alpha=0.9, s=32, is_ghost=False):
         sub = pts[pts.clean_stem.isin(stems)]
         sub_23 = sub[sub["campaign"].astype(str) == "2023"]
         sub_24 = sub[sub["campaign"].astype(str) == "2024"]
@@ -283,30 +290,34 @@ def render_whole_dataset_splits_map(
                            linewidths=0.5, zorder=z_base + 2)
 
     # Plot groups: Ghost buffer first (borderless, no crosses), then Train, Val, Test (thin white border)
-    plot_split(dropped_stems, COLOR_GHOST, "Buffer (Dropped)", z_base=2, alpha=0.85, s=22, is_ghost=True)
-    plot_split(train_stems, COLOR_TRAIN, "Train", z_base=5, alpha=0.90, s=26, is_ghost=False)
-    plot_split(val_stems, COLOR_VAL, "Val", z_base=8, alpha=0.95, s=30, is_ghost=False)
-    plot_split(test_stems, COLOR_TEST, "Test", z_base=11, alpha=0.95, s=30, is_ghost=False)
+    plot_split(dropped_stems, COLOR_GHOST, "Buffer (Dropped)", z_base=2, alpha=0.85, s=26, is_ghost=True)
+    plot_split(train_stems, COLOR_TRAIN, "Train", z_base=5, alpha=0.90, s=32, is_ghost=False)
+    plot_split(val_stems, COLOR_VAL, "Val", z_base=8, alpha=0.95, s=36, is_ghost=False)
+    plot_split(test_stems, COLOR_TEST, "Test", z_base=11, alpha=0.95, s=36, is_ghost=False)
 
-    minx, miny, maxx, maxy = pts.total_bounds
-    pad_x = 25
-    pad_y_top = 25
-    pad_y_bottom = 75
-    ax.set_xlim(minx - pad_x, maxx + pad_x)
-    ax.set_ylim(miny - pad_y_bottom, maxy + pad_y_top)
+    # 1:1 side ratio of the map part with vertical extension for less dense points and better distinction
+    span = 680.0
+    x_mid = 633338.0
+    ymin = 5332115.0  # safely above 5,332,100 to eliminate the overstanding bottom tag
+    ymax = ymin + span
+    xmin = x_mid - span / 2
+    xmax = x_mid + span / 2
+    ax.set_xlim(xmin, xmax)
+    ax.set_ylim(ymin, ymax)
     ax.set_aspect("equal")
 
-    format_metric_axes(ax, x_step=100, y_step=100)
+    # 100m steps with rotated 90° numbers and no 5,332,100 tag
+    format_metric_axes(ax, x_step=100, y_step=100, rotate_y=True)
     add_cartographic_accoutrements(ax, crs_str="EPSG:32633", use_basemap=use_basemap, scale_fraction=0.18)
 
-    # Clean Legend with >= 16 pt font placed horizontally at the top in 2 rows of 3 columns
+    # Clean Legend with 18 pt font stacked in two rows at the top (3 columns)
     h = [
-        Line2D([0], [0], marker="o", color="w", markerfacecolor=COLOR_TRAIN, markeredgecolor="white", markeredgewidth=0.7, markersize=11, linestyle="", label=f"Train Split (n = {len(train_stems):,})"),
-        Line2D([0], [0], marker="o", color="w", markerfacecolor=COLOR_GHOST, markeredgecolor="none", markersize=10, linestyle="", label=f"Buffer Moat (n = {len(dropped_stems):,})"),
-        Line2D([0], [0], marker="o", color="w", markerfacecolor=COLOR_VAL, markeredgecolor="white", markeredgewidth=0.7, markersize=11, linestyle="", label=f"Val Split (n = {len(val_stems):,})"),
-        Line2D([0], [0], marker="o", color="w", markerfacecolor="#334155", markeredgecolor="white", markeredgewidth=0.7, markersize=10, linestyle="", label="2023 Survey"),
-        Line2D([0], [0], marker="o", color="w", markerfacecolor=COLOR_TEST, markeredgecolor="white", markeredgewidth=0.7, markersize=11, linestyle="", label=f"Test Split (n = {len(test_stems):,})"),
-        Line2D([0], [0], marker="$\oplus$", color="#334155", markersize=13, linestyle="", label="2024 Survey"),
+        Line2D([0], [0], marker="o", color="w", markerfacecolor=COLOR_TRAIN, markeredgecolor="white", markeredgewidth=0.7, markersize=12, linestyle="", label=f"Train Split (n = {len(train_stems):,})"),
+        Line2D([0], [0], marker="o", color="w", markerfacecolor=COLOR_GHOST, markeredgecolor="none", markersize=11, linestyle="", label=f"Buffer Moat (n = {len(dropped_stems):,})"),
+        Line2D([0], [0], marker="o", color="w", markerfacecolor=COLOR_VAL, markeredgecolor="white", markeredgewidth=0.7, markersize=12, linestyle="", label=f"Val Split (n = {len(val_stems):,})"),
+        Line2D([0], [0], marker="o", color="w", markerfacecolor="#334155", markeredgecolor="white", markeredgewidth=0.7, markersize=11, linestyle="", label="2023 Survey"),
+        Line2D([0], [0], marker="o", color="w", markerfacecolor=COLOR_TEST, markeredgecolor="white", markeredgewidth=0.7, markersize=12, linestyle="", label=f"Test Split (n = {len(test_stems):,})"),
+        Line2D([0], [0], marker=r"$\oplus$", color="#334155", markersize=14, linestyle="", label="2024 Survey"),
     ]
     ax.legend(handles=h, loc="lower center", bbox_to_anchor=(0.5, 1.02), ncol=3,
               frameon=True, framealpha=0.94, facecolor="white", edgecolor="#cbd5e1", fontsize=FONT_LEGEND)
@@ -353,12 +364,19 @@ def render_distillation_dataset_map(
     sub_test = pts_lab[pts_lab.clean_stem.isin(test_stems)]
 
     # 2. Load safe unlabeled background slices (extending to southern/western flight zones)
-    safe_geo_path = export_dir / "sliced_unlabeled" / "safe_image_footprints.geojson"
-    if safe_geo_path.exists():
+    safe_candidates = [
+        export_dir / "sliced_unlabeled" / "safe_image_footprints.geojson",
+        export_dir / "metadata" / "safe_image_footprints.geojson",
+        Path(r"E:/Götterbaum/_export_data/sliced_unlabeled/safe_image_footprints.geojson")
+    ]
+    safe_geo_path = next((cand for cand in safe_candidates if cand.exists()), None)
+    if safe_geo_path:
+        print(f"  -> Found distillation background footprints at: {safe_geo_path}")
         gdf_safe = gpd.read_file(safe_geo_path).to_crs(epsg=32633).copy()
         gdf_safe["centroid"] = gdf_safe.geometry.centroid
         pts_safe = gdf_safe.set_geometry("centroid")
     else:
+        print("  -> [WARNING] safe_image_footprints.geojson not found in candidate paths.")
         pts_safe = gpd.GeoDataFrame()
 
     total_distill_train_count = len(sub_train_lab) + len(pts_safe)
@@ -392,14 +410,14 @@ def render_distillation_dataset_map(
     ax.set_ylim(*shared_ylim)
     ax.set_aspect("equal")
 
-    format_metric_axes(ax, x_step=250, y_step=200)
+    format_metric_axes(ax, x_step=250, y_step=500)
     add_cartographic_accoutrements(ax, crs_str="EPSG:32633", use_basemap=use_basemap, scale_fraction=0.18, north_pos="top_right")
 
-    # Clean Legend with >= 16 pt font placed horizontally at the top
+    # Clean Legend with >= 20 pt font placed horizontally at the top
     h = [
-        Line2D([0], [0], marker="o", color="w", markerfacecolor=COLOR_TRAIN, markeredgecolor="none", markersize=10, linestyle="", label=f"Distillation Training Set (n = {total_distill_train_count:,})"),
-        Line2D([0], [0], marker="o", color="w", markerfacecolor=COLOR_VAL, markeredgecolor="white", markeredgewidth=0.7, markersize=11, linestyle="", label=f"Validation Set (n = {len(sub_val):,})"),
-        Line2D([0], [0], marker="o", color="w", markerfacecolor=COLOR_TEST, markeredgecolor="white", markeredgewidth=0.7, markersize=11, linestyle="", label=f"Test Set (n = {len(sub_test):,})"),
+        Line2D([0], [0], marker="o", color="w", markerfacecolor=COLOR_TRAIN, markeredgecolor="none", markersize=12, linestyle="", label=f"Distillation Training Set (n = {total_distill_train_count:,})"),
+        Line2D([0], [0], marker="o", color="w", markerfacecolor=COLOR_VAL, markeredgecolor="white", markeredgewidth=0.7, markersize=13, linestyle="", label=f"Validation Set (n = {len(sub_val):,})"),
+        Line2D([0], [0], marker="o", color="w", markerfacecolor=COLOR_TEST, markeredgecolor="white", markeredgewidth=0.7, markersize=13, linestyle="", label=f"Test Set (n = {len(sub_test):,})"),
     ]
     ax.legend(handles=h, loc="lower center", bbox_to_anchor=(0.5, 1.02), ncol=3,
               frameon=True, framealpha=0.94, facecolor="white", edgecolor="#cbd5e1", fontsize=FONT_LEGEND)
@@ -463,12 +481,12 @@ def render_extended_testset_blue_shades_map(
     ax.set_ylim(miny - pad_y_bottom, maxy + pad_y_top)
     ax.set_aspect("equal")
 
-    format_metric_axes(ax, x_step=50, y_step=25)
+    format_metric_axes(ax, x_step=100, y_step=100)
     add_cartographic_accoutrements(ax, crs_str="EPSG:32633", use_basemap=use_basemap, scale_fraction=0.15)
 
     h = [
-        Line2D([0], [0], marker="D", color="w", markerfacecolor="#1d4ed8", markeredgecolor="white", markeredgewidth=0.8, markersize=11, linestyle="", label=f"Original Test Set (Labeled, n = {len(pts_lab):,})"),
-        Line2D([0], [0], marker="o", color="w", markerfacecolor="#38bdf8", markeredgecolor="white", markeredgewidth=0.7, markersize=11, linestyle="", label=f"Extended Test Set (Unlabeled Background, n = {len(pts_unl):,})"),
+        Line2D([0], [0], marker="D", color="w", markerfacecolor="#1d4ed8", markeredgecolor="white", markeredgewidth=0.8, markersize=13, linestyle="", label=f"Original Test Set (Labeled, n = {len(pts_lab):,})"),
+        Line2D([0], [0], marker="o", color="w", markerfacecolor="#38bdf8", markeredgecolor="white", markeredgewidth=0.7, markersize=13, linestyle="", label=f"Extended Test Set (Unlabeled Background, n = {len(pts_unl):,})"),
     ]
     ax.legend(handles=h, loc="lower left", bbox_to_anchor=(0.0, 1.02), ncol=2,
               frameon=True, framealpha=0.94, facecolor="white", edgecolor="#cbd5e1", fontsize=FONT_LEGEND)
@@ -543,9 +561,9 @@ def render_whole_dataset_image_locations_map(
     ax23.set_xlim(*shared_xlim)
     ax23.set_ylim(*shared_ylim)
     ax23.set_aspect("equal")
-    format_metric_axes(ax23, x_step=250, y_step=200)
+    format_metric_axes(ax23, x_step=250, y_step=500)
     add_cartographic_accoutrements(ax23, crs_str="EPSG:32633", use_basemap=use_basemap, scale_fraction=0.18)
-    h23 = [Line2D([0], [0], marker="o", color="w", markerfacecolor=COLOR_SURVEY_2023, markeredgecolor="white", markeredgewidth=0.6, markersize=11, linestyle="", label=f"August 2023 UAV Flight Positions (n = {len(cams_23):,})")]
+    h23 = [Line2D([0], [0], marker="o", color="w", markerfacecolor=COLOR_SURVEY_2023, markeredgecolor="white", markeredgewidth=0.6, markersize=13, linestyle="", label=f"August 2023 UAV Flight Positions (n = {len(cams_23):,})")]
     ax23.legend(handles=h23, loc="lower left", bbox_to_anchor=(0.0, 1.02), frameon=True, framealpha=0.94, facecolor="white", fontsize=FONT_LEGEND)
 
     out_23 = plots_dir / "whole_dataset_images_2023_map.png"
@@ -559,9 +577,9 @@ def render_whole_dataset_image_locations_map(
     ax24.set_xlim(*shared_xlim)
     ax24.set_ylim(*shared_ylim)
     ax24.set_aspect("equal")
-    format_metric_axes(ax24, x_step=250, y_step=200)
+    format_metric_axes(ax24, x_step=250, y_step=500)
     add_cartographic_accoutrements(ax24, crs_str="EPSG:32633", use_basemap=use_basemap, scale_fraction=0.18)
-    h24 = [Line2D([0], [0], marker="o", color="w", markerfacecolor=COLOR_SURVEY_2024, markeredgecolor="white", markeredgewidth=0.6, markersize=11, linestyle="", label=f"June 2024 UAV Flight Positions (n = {len(cams_24):,})")]
+    h24 = [Line2D([0], [0], marker="o", color="w", markerfacecolor=COLOR_SURVEY_2024, markeredgecolor="white", markeredgewidth=0.6, markersize=13, linestyle="", label=f"June 2024 UAV Flight Positions (n = {len(cams_24):,})")]
     ax24.legend(handles=h24, loc="lower left", bbox_to_anchor=(0.0, 1.02), frameon=True, framealpha=0.94, facecolor="white", fontsize=FONT_LEGEND)
 
     out_24 = plots_dir / "whole_dataset_images_2024_map.png"
@@ -576,12 +594,12 @@ def render_whole_dataset_image_locations_map(
     ax_comb.set_xlim(*shared_xlim)
     ax_comb.set_ylim(*shared_ylim)
     ax_comb.set_aspect("equal")
-    format_metric_axes(ax_comb, x_step=250, y_step=200)
+    format_metric_axes(ax_comb, x_step=250, y_step=500)
     add_cartographic_accoutrements(ax_comb, crs_str="EPSG:32633", use_basemap=use_basemap, scale_fraction=0.18)
 
     h_comb = [
-        Line2D([0], [0], marker="o", color="w", markerfacecolor=COLOR_SURVEY_2023, markeredgecolor="none", markersize=10, linestyle="", label=f"August 2023 UAV Flight (n = {len(cams_23):,})"),
-        Line2D([0], [0], marker="o", color="w", markerfacecolor=COLOR_SURVEY_2024, markeredgecolor="none", markersize=10, linestyle="", label=f"June 2024 UAV Flight (n = {len(cams_24):,})"),
+        Line2D([0], [0], marker="o", color="w", markerfacecolor=COLOR_SURVEY_2023, markeredgecolor="none", markersize=12, linestyle="", label=f"August 2023 UAV Flight (n = {len(cams_23):,})"),
+        Line2D([0], [0], marker="o", color="w", markerfacecolor=COLOR_SURVEY_2024, markeredgecolor="none", markersize=12, linestyle="", label=f"June 2024 UAV Flight (n = {len(cams_24):,})"),
     ]
     ax_comb.legend(handles=h_comb, loc="lower left", bbox_to_anchor=(0.0, 1.02), ncol=2,
                    frameon=True, framealpha=0.94, facecolor="white", fontsize=FONT_LEGEND)
@@ -607,7 +625,11 @@ def render_selected_images_for_labelling_map(
     clearly differentiating 2023 vs 2024 on a single map.
     """
     print("\n[Map 5] Rendering Selected Images for Labelling Map...")
-    meta_path = export_dir / "sliced_dataset" / "slice_metadata.json"
+    meta_path = export_dir / "metadata" / "slice_metadata.json"
+    if not meta_path.exists():
+        meta_path = export_dir / "sliced_dataset" / "slice_metadata.json"
+    if not meta_path.exists() and hasattr(config, "RAYCASTER_METADATA_PATH") and config.RAYCASTER_METADATA_PATH.exists():
+        meta_path = config.RAYCASTER_METADATA_PATH
     with open(meta_path, "r", encoding="utf-8") as f:
         meta = json.load(f)
 
@@ -634,26 +656,30 @@ def render_selected_images_for_labelling_map(
     # 2023: Vibrant Blue / Cyan solid circle with thin white border
     xs_23 = [p[0] for p in pts_23]
     ys_23 = [p[1] for p in pts_23]
-    ax.scatter(xs_23, ys_23, c=COLOR_SURVEY_2023, marker="o", s=26, alpha=0.90, edgecolors="white", linewidths=0.7, zorder=3)
+    ax.scatter(xs_23, ys_23, c=COLOR_SURVEY_2023, marker="o", s=38, alpha=0.90, edgecolors="white", linewidths=0.7, zorder=3)
 
     # 2024: Warm Coral / Orange circle with thin cross and thin white border
     xs_24 = [p[0] for p in pts_24]
     ys_24 = [p[1] for p in pts_24]
-    ax.scatter(xs_24, ys_24, c=COLOR_SURVEY_2024, marker="o", s=32, alpha=0.90, edgecolors="white", linewidths=0.7, zorder=4)
-    ax.scatter(xs_24, ys_24, c="white", marker="+", s=14, linewidths=0.5, zorder=5)
+    ax.scatter(xs_24, ys_24, c=COLOR_SURVEY_2024, marker="o", s=46, alpha=0.90, edgecolors="white", linewidths=0.7, zorder=4)
+    ax.scatter(xs_24, ys_24, c="white", marker="+", s=20, linewidths=0.6, zorder=5)
 
-    # Synchronize with EXACT spatial extent and ticks of wide-area maps
-    shared_xlim, shared_ylim = get_global_wide_extent(export_dir)
-    ax.set_xlim(*shared_xlim)
-    ax.set_ylim(*shared_ylim)
+    # Zoom in on dataset points while filling the same wide 18:9.5 publication map format
+    # (wider satellite imagery margins to the right and left, with no text overlaps)
+    y_span = 700.0
+    x_span = y_span * (2177.0 / 1189.0)  # preserves exact global wide aspect ratio (~1281.7 m)
+    x_mid = 633326.0
+    y_mid = 5332400.0
+    ax.set_xlim(x_mid - x_span / 2, x_mid + x_span / 2)
+    ax.set_ylim(y_mid - y_span / 2, y_mid + y_span / 2)
     ax.set_aspect("equal")
 
-    format_metric_axes(ax, x_step=250, y_step=200)
-    add_cartographic_accoutrements(ax, crs_str="EPSG:32633", use_basemap=use_basemap, scale_fraction=0.18)
+    format_metric_axes(ax, x_step=200, y_step=200, rotate_y=True)
+    add_cartographic_accoutrements(ax, crs_str="EPSG:32633", use_basemap=use_basemap, scale_fraction=0.15)
 
     h = [
-        Line2D([0], [0], marker="o", color="w", markerfacecolor=COLOR_SURVEY_2023, markeredgecolor="white", markeredgewidth=0.7, markersize=11, linestyle="", label=f"2023 Selected Images (n = {len(pts_23):,})"),
-        Line2D([0], [0], marker="$\oplus$", color=COLOR_SURVEY_2024, markersize=13, linestyle="", label=f"2024 Selected Images (n = {len(pts_24):,})"),
+        Line2D([0], [0], marker="o", color="w", markerfacecolor=COLOR_SURVEY_2023, markeredgecolor="white", markeredgewidth=0.7, markersize=14, linestyle="", label=f"2023 Selected Images (n = {len(pts_23):,})"),
+        Line2D([0], [0], marker="$\oplus$", color=COLOR_SURVEY_2024, markersize=16, linestyle="", label=f"2024 Selected Images (n = {len(pts_24):,})"),
     ]
     ax.legend(handles=h, loc="lower left", bbox_to_anchor=(0.0, 1.02), ncol=2,
               frameon=True, framealpha=0.94, facecolor="white", edgecolor="#cbd5e1", fontsize=FONT_LEGEND)
@@ -675,7 +701,7 @@ def render_all_publication_dataset_maps(
 ):
     """Executes full generation of all requested minimalist publication maps."""
     print("=" * 70)
-    print(" EXECUTING PUBLICATION CARTOGRAPHY SUITE (ALL FONTS >= 16 PT)")
+    print(" EXECUTING PUBLICATION CARTOGRAPHY SUITE (ENLARGED FONTS >= 20 PT)")
     print("=" * 70)
     plots_dir.mkdir(parents=True, exist_ok=True)
     dataset_plots_dir = export_dir / "testset_unlabeled_combined" / "plots"
